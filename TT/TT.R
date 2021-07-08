@@ -16,8 +16,8 @@ ORIGEN_ESCALAMIENTO = CASE
 WHEN call_req.description LIKE '%alarma%' THEN 'Monitoreo' 
 ELSE 'Area Cliente' END,
 (analista.first_name + ' ' + analista.last_name) AS ANALISTA_RESPONSABLE_CIERRE,
-GESTIONADO_DELIVERY = CASE  dbo.call_req.group_id WHEN 0x8606FE2A25E99944A17B99560ED08207 THEN 'GRUPO SERVICES DELIVERY' END,
-dbo.call_req.parent AS INCIDENTE_PADRE,
+GESTIONADO_DELIVERY = CASE  dbo.call_req.group_id 
+WHEN 0x8606FE2A25E99944A17B99560ED08207 THEN 'GRUPO SERVICES DELIVERY' END,
 rootcause.sym AS CAUSA_RAIZ,
 usp_symptom_code.sym AS SINTOMA,
 usp_resolution_code.sym AS COD_SOLUCION,
@@ -29,13 +29,22 @@ dbo.cr_stat.sym AS ESTADO_TICKET,
 (solicitante.first_name + ' ' + solicitante.last_name) AS REPORTADO_POR,
 dbo.ca_organization.org_name AS AREA_DE_QUIEN_REPORTA,
 dbo.ca_company.company_name AS EMPRESA,
-dbo.call_req.sla_violation AS SLA_VIOLATION,
-EVALUAR_SLA = CASE
+SLA_EVALUADO = CASE
 WHEN dbo.impact.sym = '1 Alto' THEN 'SLA 1'
 WHEN dbo.impact.sym = '3 Medio' THEN 'SLA 2' 
 WHEN dbo.impact.sym = '5 Bajo' THEN 'SLA 3'
 WHEN dbo.impact.sym = 'Ninguno' THEN 'SLA 3'
 ELSE 'No Identificado' END,
+SLA_ESTADO = CASE
+WHEN dbo.impact.sym = '1 Alto' AND ABS((open_date-close_date)/60) <=60*8 THEN 'CUMPLE'
+WHEN dbo.impact.sym = '1 Alto' AND ABS((open_date-close_date)/60) >60*8 THEN 'INCUMPLE'
+WHEN dbo.impact.sym = '3 Medio' AND ABS((open_date-close_date)/60) <=60*16 THEN 'CUMPLE'
+WHEN dbo.impact.sym = '3 Medio' AND ABS((open_date-close_date)/60) >60*16 THEN 'INCUMPLE'
+WHEN dbo.impact.sym = '5 Bajo' AND ABS((open_date-close_date)/60) <=60*72 THEN 'CUMPLE'
+WHEN dbo.impact.sym = '5 Bajo' AND ABS((open_date-close_date)/60) >60*72 THEN 'INCUMPLE'
+WHEN dbo.impact.sym = 'Ninguno' AND ABS((open_date-close_date)/60) <=60*72 THEN 'CUMPLE'
+WHEN dbo.impact.sym = 'Ninguno' AND ABS((open_date-close_date)/60) >60*72 THEN 'INCUMPLE'
+ELSE 'SLA No Identificado' END,
 DATEADD(HH,-5,(DATEADD(ss,open_date, '19700101 00:00:00')))  AS FECHA_INICIO_TICKET,
 DATEADD(HH,-5,(DATEADD(ss,close_date, '19700101 00:00:00')))  AS FECHA_CIERRE_TICKET,
 DATEADD(HH,-5,(DATEADD(ss,outage_start_time, '19700101 00:00:00:00'))) AS FECHA_REAL_INICIO_TICKET,
@@ -47,12 +56,21 @@ dbo.call_req.outage_detail_who AS 'QUIEN',
 dbo.call_req.outage_detail_what AS 'QUE_CAUSO',
 dbo.call_req.outage_reason_desc AS 'RAZON_INDISPONIBILIDAD',
 dbo.interface.sym AS METODO_REPORTE,
-NEGOCIO = CASE 
+OPERACION = CASE 
 WHEN dbo.prob_ctg.sym LIKE '%.Semilla%' THEN 'Móvil' 
 WHEN dbo.prob_ctg.sym LIKE '%WL12C%' THEN 'Móvil'
 WHEN dbo.prob_ctg.sym LIKE '%Movil%' THEN 'Móvil'
 WHEN dbo.ca_owned_resource.resource_name LIKE '%Semilla%' THEN 'Móvil'
-ELSE 'Fijo' END
+ELSE 'Fijo' END,
+ATRIBUCION = CASE 
+WHEN CONVERT (VARCHAR,dbo.call_req.outage_detail_who) = 'I' THEN 'Infraestructura'
+WHEN CONVERT (VARCHAR,dbo.call_req.outage_detail_who) = 'O' THEN 'Operación'
+WHEN CONVERT (VARCHAR,dbo.call_req.outage_detail_who) = 'D' THEN 'Desarrollo'
+ELSE 'Operación' END,
+INDISPONIBILIDAD = CASE
+WHEN dbo.impact.sym = '1 Alto' THEN 'Indisponibilidad'
+WHEN dbo.impact.sym = '3 Medio' THEN 'Indisponibilidad'
+ELSE 'Disponibilidad' END
    
 FROM 
 dbo.call_req

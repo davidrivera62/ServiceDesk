@@ -164,6 +164,9 @@ server <- function(input, output) {
     filter(ANALISTA_RESPONSANBLE_CIERRE_TAREA != 'David Rivera' | is.na(ANALISTA_RESPONSANBLE_CIERRE_TAREA)) %>%
     filter(ANALISTA_RESPONSANBLE_CIERRE_TAREA != 'Jaime Gomez' | is.na(ANALISTA_RESPONSANBLE_CIERRE_TAREA)) %>%
     filter(ANALISTA_RESPONSANBLE_CIERRE_TAREA != 'Yonny Escobar' | is.na(ANALISTA_RESPONSANBLE_CIERRE_TAREA))
+  
+  colnames(OC_data)[colnames(OC_data) == 'SLA_EVALUADO'] <- 'EVALUAR_SLA'
+  colnames(OC_data)[colnames(OC_data) == 'OPERACION'] <- 'NEGOCIO'
     
   #OC_data <- mutate(OC_data, OPERACION =ifelse(grepl("emilla|WL12",OC_data$CATEGORIA_OC), "Movil","Fijo"))
   
@@ -498,6 +501,9 @@ server <- function(input, output) {
     filter(ANALISTA_RESPONSABLE_CIERRE != 'David Rivera'| is.na(ANALISTA_RESPONSABLE_CIERRE) ) %>%
     filter(ANALISTA_RESPONSABLE_CIERRE != 'Jaime Gomez'| is.na(ANALISTA_RESPONSABLE_CIERRE) ) %>%
     filter(ANALISTA_RESPONSABLE_CIERRE != 'Yonny Escobar'| is.na(ANALISTA_RESPONSABLE_CIERRE) )
+  
+  colnames(TT_data)[colnames(TT_data) == 'SLA_EVALUADO'] <- 'EVALUAR_SLA'
+  colnames(TT_data)[colnames(TT_data) == 'OPERACION'] <- 'NEGOCIO'
   
   output$EstadoTTlist <- renderUI({
     
@@ -997,6 +1003,8 @@ server <- function(input, output) {
     filter(ANALISTA_RESPONSANBLE_CIERRE_TAREA != 'Yonny Escobar' | is.na(ANALISTA_RESPONSANBLE_CIERRE_TAREA)) %>%
     filter(CATEGORIA_OC!='Delivery.Entrega de Plataforma/Aplicación a Operaciones'| is.na(CATEGORIA_OC))
   
+  colnames(DevOps_OC_data)[colnames(DevOps_OC_data) == 'SLA_EVALUADO'] <- 'EVALUAR_SLA'
+  
   output$EstadoDevOpsOClist <- renderUI({
     
     EstadoDevOpsOClist <- sort(unique(as.vector(DevOps_OC_data$ESTADO_TAREA)), decreasing = FALSE)
@@ -1108,6 +1116,8 @@ server <- function(input, output) {
         CATEGORIA_OC == "Catalogo.crear.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24 ~ "Cumple",
         CATEGORIA_OC == "Catalogo.crear.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
         CATEGORIA_OC == "Catalogo.modificar.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24 ~ "Cumple",
+        CATEGORIA_OC == "Catalogo.modificar.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
+        CATEGORIA_OC == "Catalogo.modificar.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
         CATEGORIA_OC == "Catalogo.modificar.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
         DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*4 ~ "Cumple",
         DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple")) %>%
