@@ -3,7 +3,7 @@ tt.indisponibilidad <- function(TT){
   TT %>%
     ggplot(aes(x = reorder(SERVICIO_EMPRESARIAL, Indisponibilidad),
                y = Indisponibilidad,
-               fill=RESPONSABLE,
+               fill=ATRIBUCION,
                label=sprintf("%0.1f",round(Indisponibilidad, digits = 1)))) +
     geom_bar(position = "stack", stat = "identity") +
     coord_flip() +

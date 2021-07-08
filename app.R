@@ -309,21 +309,8 @@ server <- function(input, output) {
       filter(FECHA_CIERRE_TAREA > input$dateRange[1] & FECHA_CIERRE_TAREA < input$dateRange[2]) %>%
       filter(ESTADO_TAREA == 'COMP') %>%
       filter(EVALUAR_SLA !="No Aplica"|is.na(EVALUAR_SLA)) %>%
-      mutate( ANS2 = case_when(
-        EVALUAR_SLA == "SLA 4" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24 ~ "Cumple",
-        EVALUAR_SLA == "SLA 4" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
-        EVALUAR_SLA == "SLA 5" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*8 ~ "Cumple",
-        EVALUAR_SLA == "SLA 5" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple",
-        EVALUAR_SLA == "SLA 6" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24*5 ~ "Cumple",
-        EVALUAR_SLA == "SLA 6" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24*5 ~ "Incumple",
-        EVALUAR_SLA == "SLA 7" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*4 ~ "Cumple",
-        EVALUAR_SLA == "SLA 7" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple",
-        EVALUAR_SLA == "SLA 8" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*4 ~ "Cumple",
-        EVALUAR_SLA == "SLA 8" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple",
-        EVALUAR_SLA == "SLA 9" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*6 ~ "Cumple",
-        EVALUAR_SLA == "SLA 9" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*6 ~ "Incumple")) %>%
-      select(ANS2,CATEGORIA_OC,NUM_OC,ESTADO_TAREA) %>% 
-      group_by(CATEGORIA_OC,ANS2,ESTADO_TAREA) %>% 
+      select(SLA_ESTADO,CATEGORIA_OC,NUM_OC,ESTADO_TAREA) %>% 
+      group_by(CATEGORIA_OC,SLA_ESTADO,ESTADO_TAREA) %>% 
       summarise(Total = length(!is.na(NUM_OC)),.groups = 'drop')
     
   })
@@ -463,26 +450,13 @@ server <- function(input, output) {
                      today()+1)) %>%
       filter(ESTADO_TAREA == 'COMP') %>%
       filter(EVALUAR_SLA !="No Aplica"|is.na(EVALUAR_SLA)) %>%
-      mutate( ANS2 = case_when(
-        EVALUAR_SLA == "SLA 4" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24 ~ "Cumple",
-        EVALUAR_SLA == "SLA 4" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
-        EVALUAR_SLA == "SLA 5" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*8 ~ "Cumple",
-        EVALUAR_SLA == "SLA 5" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple",
-        EVALUAR_SLA == "SLA 6" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24*5 ~ "Cumple",
-        EVALUAR_SLA == "SLA 6" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24*5 ~ "Incumple",
-        EVALUAR_SLA == "SLA 7" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*4 ~ "Cumple",
-        EVALUAR_SLA == "SLA 7" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple",
-        EVALUAR_SLA == "SLA 8" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*4 ~ "Cumple",
-        EVALUAR_SLA == "SLA 8" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple",
-        EVALUAR_SLA == "SLA 9" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*6 ~ "Cumple",
-        EVALUAR_SLA == "SLA 9" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*6 ~ "Incumple")) %>%
       group_by(mes=floor_date(as_datetime(FECHA_CIERRE_TAREA), "month")) %>%
-      select(NUM_OC, EVALUAR_SLA, ANS2, mes) %>%
-      group_by(mes, EVALUAR_SLA, ANS2) %>%
+      select(NUM_OC, EVALUAR_SLA, SLA_ESTADO, mes) %>%
+      group_by(mes, EVALUAR_SLA, SLA_ESTADO) %>%
       summarise(Total = length(!is.na(NUM_OC)),.groups = 'drop') %>%
       group_by(mes,EVALUAR_SLA) %>%
       mutate(TotalSLA= sum(Total)) %>%
-      summarise(ANS2,Perc = Total/TotalSLA*100, .groups = 'drop')
+      summarise(SLA_ESTADO,Perc = Total/TotalSLA*100, .groups = 'drop')
     
     
     
@@ -720,15 +694,10 @@ server <- function(input, output) {
       filter_(filt2) %>%
       filter_(filt3) %>%
       filter(FECHA_CIERRE_TICKET > input$dateRange[1] & FECHA_CIERRE_TICKET < input$dateRange[2]) %>%
-      select(NUM_TICKET, SERVICIO_EMPRESARIAL,DIFERENCIA_MINUTOS_APERTURA_CIERRE, QUIEN, QUE_CAUSO) %>%
+      select(NUM_TICKET, SERVICIO_EMPRESARIAL,DIFERENCIA_MINUTOS_APERTURA_CIERRE, QUIEN, QUE_CAUSO,ATRIBUCION) %>%
       mutate(INDISPONIBILIDAD =ifelse(grepl("indisponibilidad|Indisponibilidad|Fallo",QUE_CAUSO), "I","")) %>%
-      mutate(RESPONSABLE = case_when(
-        QUIEN=='o'|QUIEN=='O' ~ "Operación",
-        QUIEN=='i'|QUIEN=='I'|QUIEN=='SO' ~ "Infraestructura",
-        QUIEN=='d'|QUIEN=='D' ~ "Desarrollo",
-        TRUE ~ "")) %>%
       filter(INDISPONIBILIDAD == "I"| is.na(INDISPONIBILIDAD)) %>%
-      group_by(SERVICIO_EMPRESARIAL,RESPONSABLE) %>%
+      group_by(SERVICIO_EMPRESARIAL,ATRIBUCION) %>%
       summarise(Indisponibilidad=sum(DIFERENCIA_MINUTOS_APERTURA_CIERRE)/60,.groups = 'drop')
     
   })
@@ -769,14 +738,9 @@ server <- function(input, output) {
       filter_(filt2) %>%
       filter_(filt3) %>%
       filter(FECHA_CIERRE_TICKET > input$dateRange[1] & FECHA_CIERRE_TICKET < input$dateRange[2]) %>%
-      select(NUM_TICKET, SERVICIO_EMPRESARIAL,DIFERENCIA_MINUTOS_APERTURA_CIERRE, IMPACTO, QUIEN, QUE_CAUSO) %>%
+      select(NUM_TICKET, SERVICIO_EMPRESARIAL,DIFERENCIA_MINUTOS_APERTURA_CIERRE, IMPACTO, QUIEN, QUE_CAUSO,ATRIBUCION) %>%
       mutate(INDISPONIBILIDAD =ifelse(grepl("indisponibilidad|Indisponibilidad|Fallo",QUE_CAUSO), "I","")) %>%
-      mutate(RESPONSABLE = case_when(
-        QUIEN=='o'|QUIEN=='O' ~ "Operación",
-        QUIEN=='i'|QUIEN=='I'|QUIEN=='SO' ~ "Infraestructura",
-        QUIEN=='d'|QUIEN=='D' ~ "Desarrollo",
-        TRUE ~ "")) %>%
-      group_by(SERVICIO_EMPRESARIAL, IMPACTO, RESPONSABLE) %>%
+      group_by(SERVICIO_EMPRESARIAL, IMPACTO, ATRIBUCION) %>%
       summarise(Total = length(!is.na(NUM_TICKET)), .groups = 'drop')
     
   })
@@ -872,15 +836,9 @@ server <- function(input, output) {
       filter_(filt2) %>%
       filter_(filt3) %>%
       filter(FECHA_CIERRE_TICKET > input$dateRange[1] & FECHA_CIERRE_TICKET < input$dateRange[2]) %>%
-      select(NUM_TICKET, SERVICIO_EMPRESARIAL,IMPACTO, DIFERENCIA_MINUTOS_APERTURA_CIERRE) %>%
+      select(NUM_TICKET, SERVICIO_EMPRESARIAL,IMPACTO, DIFERENCIA_MINUTOS_APERTURA_CIERRE,SLA_ESTADO) %>%
       filter(IMPACTO != "") %>%
-      mutate(SLA_CUMPLE = case_when(
-        IMPACTO == "5 Bajo" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*72 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Cumple",
-        IMPACTO == "Ninguno" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*72 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Cumple",
-        IMPACTO == "3 Medio" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*16 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE)~ "Cumple",
-        IMPACTO == "1 Alto" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*8 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE)~ "Cumple",
-        TRUE ~ "No Cumple")) %>%
-      group_by(SERVICIO_EMPRESARIAL, SLA_CUMPLE) %>%
+      group_by(SERVICIO_EMPRESARIAL, SLA_ESTADO) %>%
       summarise(Total = length(!is.na(NUM_TICKET)), .groups = 'drop')
     
   })
@@ -964,28 +922,18 @@ server <- function(input, output) {
                      floor_date(today(), unit = "month") %m-% months(3), 
                      today()+1)) %>%
       select(NUM_TICKET, FECHA_CIERRE_TICKET, ESTADO_TICKET, SERVICIO_EMPRESARIAL,IMPACTO, 
-             DIFERENCIA_MINUTOS_APERTURA_CIERRE, QUIEN,EVALUAR_SLA) %>%
+             DIFERENCIA_MINUTOS_APERTURA_CIERRE, QUIEN,EVALUAR_SLA,QUIEN,SLA_ESTADO,ATRIBUCION) %>%
       #filter(ESTADO_TICKET == "Cerrado-Resuelto" | is.na(ESTADO_TICKET)) %>%
       filter(IMPACTO != ""|is.na(IMPACTO)) %>%
-      mutate(RESPONSABLE = case_when(
-        QUIEN=='o'|QUIEN=='O' ~ "Operación",
-        QUIEN=='i'|QUIEN=='I'|QUIEN=='SO' ~ "Infraestructura",
-        QUIEN=='d'|QUIEN=='D' ~ "Desarrollo",
-        TRUE ~ "")) %>%
-      filter(RESPONSABLE == "Operación"| is.na(RESPONSABLE) | RESPONSABLE == "") %>%
+      filter(ATRIBUCION == "Operación"| is.na(ATRIBUCION) | ATRIBUCION == "") %>%
       filter(EVALUAR_SLA != "No Identificado"|is.na(EVALUAR_SLA)) %>%
-      mutate(SLA_CUMPLE = case_when(
-        EVALUAR_SLA == "SLA 3" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*72 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Cumple",
-        EVALUAR_SLA == "SLA 2" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*16 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Cumple",
-        EVALUAR_SLA == "SLA 1" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*8 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Cumple",
-        TRUE ~ "Incumple")) %>%
       group_by(mes=floor_date(as_datetime(FECHA_CIERRE_TICKET), "month")) %>%
-      select(NUM_TICKET, EVALUAR_SLA, SLA_CUMPLE, mes) %>%
-      group_by(mes, EVALUAR_SLA, SLA_CUMPLE) %>%
+      select(NUM_TICKET, EVALUAR_SLA, SLA_ESTADO, mes) %>%
+      group_by(mes, EVALUAR_SLA, SLA_ESTADO) %>%
       summarise(Total = length(!is.na(NUM_TICKET)),.groups = 'drop') %>%
       group_by(mes,EVALUAR_SLA) %>%
       mutate(TotalSLA= sum(Total)) %>%
-      summarise(SLA_CUMPLE,Perc = Total/TotalSLA*100, .groups = 'drop')
+      summarise(SLA_ESTADO,Perc = Total/TotalSLA*100, .groups = 'drop')
     
   })
   
@@ -1108,22 +1056,9 @@ server <- function(input, output) {
       filter_(filt1) %>%
       filter(FECHA_CIERRE_TAREA > input$dateRange[1] & FECHA_CIERRE_TAREA < input$dateRange[2]) %>%
       filter(ESTADO_TAREA == 'COMP') %>%
-      mutate( ANS2 = case_when(
-        CATEGORIA_OC == "Catalogo.crear.permisos" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24 ~ "Cumple",
-        CATEGORIA_OC == "Catalogo.crear.permisos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
-        CATEGORIA_OC == "Catalogo.modificar.permisos" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24 ~ "Cumple",
-        CATEGORIA_OC == "Catalogo.modificar.permisos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
-        CATEGORIA_OC == "Catalogo.crear.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24 ~ "Cumple",
-        CATEGORIA_OC == "Catalogo.crear.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
-        CATEGORIA_OC == "Catalogo.modificar.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24 ~ "Cumple",
-        CATEGORIA_OC == "Catalogo.modificar.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
-        CATEGORIA_OC == "Catalogo.modificar.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
-        CATEGORIA_OC == "Catalogo.modificar.permisos devos" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
-        DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*4 ~ "Cumple",
-        DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple")) %>%
-      select(ANS2,CATEGORIA_OC,NUM_OC,ESTADO_TAREA) %>% 
-      filter(CATEGORIA_OC!='Delivery.Entrega de Plataforma/Aplicación a Operaciones'| is.na(CATEGORIA_OC)) %>%
-      group_by(CATEGORIA_OC,ANS2,ESTADO_TAREA) %>% 
+      filter(EVALUAR_SLA !="No Aplica"|is.na(EVALUAR_SLA)) %>%
+      select(SLA_ESTADO,CATEGORIA_OC,NUM_OC,ESTADO_TAREA) %>% 
+      group_by(CATEGORIA_OC,SLA_ESTADO,ESTADO_TAREA) %>% 
       summarise(Total = length(!is.na(NUM_OC)),.groups = 'drop')
     
   })
@@ -1207,25 +1142,14 @@ server <- function(input, output) {
                      floor_date(today(), unit = "month") %m-% months(3), 
                      today()+1)) %>%
       filter(ESTADO_TAREA == 'COMP') %>%
-      filter(EVALUAR_SLA != 'No Identificado'| is.na(EVALUAR_SLA)) %>%
-  mutate( ANS2 = case_when(
-    EVALUAR_SLA == "SLA 4" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24 ~ "Cumple",
-    EVALUAR_SLA == "SLA 4" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24 ~ "Incumple",
-    EVALUAR_SLA == "SLA 5" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*4 ~ "Cumple",
-    EVALUAR_SLA == "SLA 5" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple",
-    EVALUAR_SLA == "SLA 6" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*4 ~ "Cumple",
-    EVALUAR_SLA == "SLA 6" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple",
-    EVALUAR_SLA == "SLA 7" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*4 ~ "Cumple",
-    EVALUAR_SLA == "SLA 7" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*4 ~ "Incumple",
-    EVALUAR_SLA == "SLA 9" & DIFERENCIA_MINUTOS_CERRADO_TAREA <= 60*24*5 ~ "Cumple",
-    EVALUAR_SLA == "SLA 9" & DIFERENCIA_MINUTOS_CERRADO_TAREA > 60*24*5 ~ "Incumple")) %>%
-  group_by(mes=floor_date(as_datetime(FECHA_CIERRE_TAREA), "month")) %>%
-  select(NUM_OC, EVALUAR_SLA, ANS2, mes) %>%
-  group_by(mes, EVALUAR_SLA, ANS2) %>%
-  summarise(Total = length(!is.na(NUM_OC)),.groups = 'drop') %>%
-  group_by(mes,EVALUAR_SLA) %>%
-  mutate(TotalSLA= sum(Total)) %>%
-  summarise(ANS2,Perc = Total/TotalSLA*100, .groups = 'drop')
+      filter(EVALUAR_SLA !="No Aplica"|is.na(EVALUAR_SLA)) %>%
+      group_by(mes=floor_date(as_datetime(FECHA_CIERRE_TAREA), "month")) %>%
+      select(NUM_OC, EVALUAR_SLA, SLA_ESTADO, mes) %>%
+      group_by(mes, EVALUAR_SLA, SLA_ESTADO) %>%
+      summarise(Total = length(!is.na(NUM_OC)),.groups = 'drop') %>%
+      group_by(mes,EVALUAR_SLA) %>%
+      mutate(TotalSLA= sum(Total)) %>%
+      summarise(SLA_ESTADO,Perc = Total/TotalSLA*100, .groups = 'drop')
     
   })
   
@@ -1242,6 +1166,8 @@ server <- function(input, output) {
     filter(ANALISTA_RESPONSABLE_CIERRE != 'Jaime Gomez'| is.na(ANALISTA_RESPONSABLE_CIERRE) ) %>%
     filter(ANALISTA_RESPONSABLE_CIERRE != 'Yonny Escobar'| is.na(ANALISTA_RESPONSABLE_CIERRE) ) %>%
     mutate(ORIGEN_ESCALAMIENTO = ifelse(grepl("alarma",DESCRIPCION_TICKET),"Monitoreo","Area Cliente"))
+  
+  colnames(DevOps_TT)[colnames(DevOps_TT) == 'SLA_EVALUADO'] <- 'EVALUAR_SLA'
 
   
   output$EstadoDevOpsTTlist <- renderUI({
@@ -1385,15 +1311,9 @@ server <- function(input, output) {
       filter_(filt1) %>%
       filter_(filt3) %>%
       filter(FECHA_CIERRE_TICKET > input$dateRange[1] & FECHA_CIERRE_TICKET < input$dateRange[2]) %>%
-      select(NUM_TICKET, SERVICIO_EMPRESARIAL,DIFERENCIA_MINUTOS_APERTURA_CIERRE, QUIEN, QUE_CAUSO) %>%
+      select(NUM_TICKET, SERVICIO_EMPRESARIAL,DIFERENCIA_MINUTOS_APERTURA_CIERRE, QUIEN, QUE_CAUSO,ATRIBUCION) %>%
       mutate(INDISPONIBILIDAD =ifelse(grepl("indisponibilidad|Indisponibilidad|Fallo",QUE_CAUSO), "Indisponibilidad","")) %>%
-      mutate(RESPONSABLE = case_when(
-        QUIEN=='o'|QUIEN=='O' ~ "Operación",
-        QUIEN=='i'|QUIEN=='I'|QUIEN=='SO' ~ "Infraestructura",
-        QUIEN=='d'|QUIEN=='D' ~ "Desarrollo",
-        TRUE ~ "")) %>%
-      #filter(INDISPONIBILIDAD == "I"| is.na(INDISPONIBILIDAD)) %>%
-      group_by(SERVICIO_EMPRESARIAL,RESPONSABLE,INDISPONIBILIDAD) %>%
+      group_by(SERVICIO_EMPRESARIAL,ATRIBUCION,INDISPONIBILIDAD) %>%
       summarise(Indisponibilidad=sum(DIFERENCIA_MINUTOS_APERTURA_CIERRE)/60,.groups = 'drop')
     
   })
@@ -1426,14 +1346,9 @@ server <- function(input, output) {
       filter_(filt1) %>%
       filter_(filt3) %>%
       filter(FECHA_CIERRE_TICKET > input$dateRange[1] & FECHA_CIERRE_TICKET < input$dateRange[2]) %>%
-      select(NUM_TICKET, SERVICIO_EMPRESARIAL,DIFERENCIA_MINUTOS_APERTURA_CIERRE, IMPACTO, QUIEN, QUE_CAUSO) %>%
+      select(NUM_TICKET, SERVICIO_EMPRESARIAL,DIFERENCIA_MINUTOS_APERTURA_CIERRE, IMPACTO, QUIEN, QUE_CAUSO, ATRIBUCION) %>%
       mutate(INDISPONIBILIDAD =ifelse(grepl("indisponibilidad|Indisponibilidad|Fallo",QUE_CAUSO), "I","")) %>%
-      mutate(RESPONSABLE = case_when(
-        QUIEN=='o'|QUIEN=='O' ~ "Operación",
-        QUIEN=='i'|QUIEN=='I'|QUIEN=='SO' ~ "Infraestructura",
-        QUIEN=='d'|QUIEN=='D' ~ "Desarrollo",
-        TRUE ~ "")) %>%
-      group_by(SERVICIO_EMPRESARIAL, IMPACTO, RESPONSABLE) %>%
+      group_by(SERVICIO_EMPRESARIAL, IMPACTO, ATRIBUCION) %>%
       summarise(Total = length(!is.na(NUM_TICKET)), .groups = 'drop')
     
   })
@@ -1516,15 +1431,9 @@ server <- function(input, output) {
       filter_(filt1) %>%
       filter_(filt3) %>%
       filter(FECHA_CIERRE_TICKET > input$dateRange[1] & FECHA_CIERRE_TICKET < input$dateRange[2]) %>%
-      select(NUM_TICKET, SERVICIO_EMPRESARIAL,IMPACTO, DIFERENCIA_MINUTOS_APERTURA_CIERRE) %>%
+      select(NUM_TICKET, SERVICIO_EMPRESARIAL,IMPACTO, DIFERENCIA_MINUTOS_APERTURA_CIERRE,SLA_ESTADO) %>%
       filter(IMPACTO != "") %>%
-      mutate(SLA_CUMPLE = case_when(
-        IMPACTO == "5 Bajo" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*72 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Cumple",
-        IMPACTO == "Ninguno" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*72 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Cumple",
-        IMPACTO == "3 Medio" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*16 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE)~ "Cumple",
-        IMPACTO == "1 Alto" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*8 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE)~ "Cumple",
-        TRUE ~ "No Cumple")) %>%
-      group_by(SERVICIO_EMPRESARIAL, SLA_CUMPLE) %>%
+      group_by(SERVICIO_EMPRESARIAL, SLA_ESTADO) %>%
       summarise(Total = length(!is.na(NUM_TICKET)), .groups = 'drop')
     
   })
@@ -1593,35 +1502,19 @@ server <- function(input, output) {
       filter(between(as.Date(FECHA_CIERRE_TICKET,"%Y-%m-%d"),
                      floor_date(today(), unit = "month") %m-% months(3), 
                      today()+1)) %>%
-      select(NUM_TICKET, FECHA_CIERRE_TICKET, ESTADO_TICKET, SERVICIO_EMPRESARIAL,IMPACTO, DIFERENCIA_MINUTOS_APERTURA_CIERRE, QUIEN) %>%
+      select(NUM_TICKET, FECHA_CIERRE_TICKET, ESTADO_TICKET, SERVICIO_EMPRESARIAL,IMPACTO, 
+             DIFERENCIA_MINUTOS_APERTURA_CIERRE, QUIEN,EVALUAR_SLA,QUIEN,SLA_ESTADO,ATRIBUCION) %>%
       #filter(ESTADO_TICKET == "Cerrado-Resuelto" | is.na(ESTADO_TICKET)) %>%
-      filter(IMPACTO != "") %>%
-      mutate(RESPONSABLE = case_when(
-        QUIEN=='o'|QUIEN=='O' ~ "Operación",
-        QUIEN=='i'|QUIEN=='I'|QUIEN=='SO' ~ "Infraestructura",
-        QUIEN=='d'|QUIEN=='D' ~ "Desarrollo",
-        TRUE ~ "")) %>%
-      filter(RESPONSABLE == "Operación"| is.na(RESPONSABLE) | RESPONSABLE == "") %>%
-      mutate(SLA_CUMPLE = case_when(
-        IMPACTO == "5 Bajo" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*72 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Cumple",
-        IMPACTO == "5 Bajo" & DIFERENCIA_MINUTOS_APERTURA_CIERRE > 60*72 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Incumple",
-        IMPACTO == "Ninguno" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*72 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Cumple",
-        IMPACTO == "Ninguno" & DIFERENCIA_MINUTOS_APERTURA_CIERRE > 60*72 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE) ~ "Incumple",
-        IMPACTO == "3 Medio" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*16 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE)~ "Cumple",
-        IMPACTO == "3 Medio" & DIFERENCIA_MINUTOS_APERTURA_CIERRE > 60*16 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE)~ "Incumple",
-        IMPACTO == "1 Alto" & DIFERENCIA_MINUTOS_APERTURA_CIERRE <= 60*4 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE)~ "Cumple",
-        IMPACTO == "1 Alto" & DIFERENCIA_MINUTOS_APERTURA_CIERRE > 60*4 | is.na(DIFERENCIA_MINUTOS_APERTURA_CIERRE)~ "Incumple")) %>%
-      mutate( EVALUAR_SLA = case_when(
-        IMPACTO == "Ninguno" | IMPACTO == "5 Bajo" ~ "SLA3",
-        IMPACTO == "3 Medio" ~ "SLA2",
-        IMPACTO == "1 Alto" ~ "SLA1")) %>%
+      filter(IMPACTO != ""|is.na(IMPACTO)) %>%
+      filter(ATRIBUCION == "Operación"| is.na(ATRIBUCION) | ATRIBUCION == "") %>%
+      filter(EVALUAR_SLA != "No Identificado"|is.na(EVALUAR_SLA)) %>%
       group_by(mes=floor_date(as_datetime(FECHA_CIERRE_TICKET), "month")) %>%
-      select(NUM_TICKET, EVALUAR_SLA, SLA_CUMPLE, mes) %>%
-      group_by(mes, EVALUAR_SLA, SLA_CUMPLE) %>%
+      select(NUM_TICKET, EVALUAR_SLA, SLA_ESTADO, mes) %>%
+      group_by(mes, EVALUAR_SLA, SLA_ESTADO) %>%
       summarise(Total = length(!is.na(NUM_TICKET)),.groups = 'drop') %>%
       group_by(mes,EVALUAR_SLA) %>%
       mutate(TotalSLA= sum(Total)) %>%
-      summarise(SLA_CUMPLE,Perc = Total/TotalSLA*100, .groups = 'drop')
+      summarise(SLA_ESTADO,Perc = Total/TotalSLA*100, .groups = 'drop')
     
   })
   

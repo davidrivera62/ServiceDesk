@@ -14,7 +14,7 @@ plot.cumplimiento.ans <- function(OC,Paleta){
     xlab('Categoria')+
     ylab('Cantidad OC')+
     guides(fill=guide_legend(title="Estado Tarea")) +
-    facet_wrap(~ANS2, nrow = 2)+
+    facet_wrap(~SLA_ESTADO, nrow = 2)+
     theme(legend.position="none") +
     coord_flip()+
     ggtitle("Cumplmiento ANS") +

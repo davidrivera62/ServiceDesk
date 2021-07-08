@@ -3,7 +3,7 @@ tt.cumpl.sla <- function(TT,Paleta){
   TT %>%
     ggplot(aes(x = reorder(SERVICIO_EMPRESARIAL, Total),
                y = Total,
-               fill=SLA_CUMPLE,
+               fill=SLA_ESTADO,
                label=Total)) +
     geom_bar(position = "stack", stat = "identity") +
     coord_flip() +

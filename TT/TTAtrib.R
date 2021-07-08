@@ -3,7 +3,7 @@ tt.atribucion <- function(TT,Paleta){
   TT %>%
     ggplot(aes(x = reorder(SERVICIO_EMPRESARIAL, Total), 
                y = Total,
-               fill = RESPONSABLE,
+               fill = ATRIBUCION,
                label = Total)) +
     geom_bar(position = "stack", stat = "identity")+
     scale_fill_brewer(palette = Paleta)+
