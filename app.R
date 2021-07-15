@@ -789,17 +789,19 @@ server <- function(input, output) {
              FECHA_INICIO_TICKET,
              DIFERENCIA_MINUTOS_APERTURA_CIERRE,
              QUIEN,
-             QUE_CAUSO) %>%
+             QUE_CAUSO,
+             SLA_ESTADO) %>%
       rename(TT = NUM_TICKET,
              Estado = ESTADO_TICKET,
              Analista = ANALISTA_RESPONSABLE_CIERRE,
              Impacto = IMPACTO,
              Aplicacion = SERVICIO_EMPRESARIAL,
              Catergoria = AREA_INCIDENTE,
-             Fecha = FECHA_INICIO_TICKET,
+             Fecha_Ini = FECHA_INICIO_TICKET,
              Tiempo = DIFERENCIA_MINUTOS_APERTURA_CIERRE,
              Resonsable = QUIEN,
-             Causo = QUE_CAUSO)
+             Causo = QUE_CAUSO,
+             SLA = SLA_ESTADO)
     
   })
   
@@ -1390,17 +1392,19 @@ server <- function(input, output) {
              FECHA_INICIO_TICKET,
              DIFERENCIA_MINUTOS_APERTURA_CIERRE,
              QUIEN,
-             QUE_CAUSO) %>%
+             QUE_CAUSO,
+             SLA_ESTADO) %>%
       rename(TT = NUM_TICKET,
              Estado = ESTADO_TICKET,
              Analista = ANALISTA_RESPONSABLE_CIERRE,
              Impacto = IMPACTO,
              Aplicacion = SERVICIO_EMPRESARIAL,
              Catergoria = AREA_INCIDENTE,
-             Fecha = FECHA_INICIO_TICKET,
+             Fecha_Ini = FECHA_INICIO_TICKET,
              Tiempo = DIFERENCIA_MINUTOS_APERTURA_CIERRE,
              Resonsable = QUIEN,
-             Causo = QUE_CAUSO)
+             Causo = QUE_CAUSO,
+             SLA = SLA_ESTADO)
   })
   
   output$DevOps_tablatt <- renderDT(filter='top', 
